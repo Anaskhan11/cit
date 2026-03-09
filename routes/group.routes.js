@@ -27,19 +27,19 @@ router.get('/', async (req, res) => {
     if (type === 'my') {
       // Get user's groups
       groups = await db.getMany(
-        'SELECT g.id, g.name, g.description, g.type, g.avatar_url, g.created_at, gm.role, gm.joined_at, (SELECT COUNT(*) FROM group_members WHERE group_id = g.id) as member_count, (SELECT COUNT(*) FROM messages WHERE group_id = g.id AND is_deleted = FALSE) as message_count FROM groups g JOIN group_members gm ON g.id = gm.group_id WHERE gm.user_id = ? AND g.is_active = TRUE ORDER BY g.created_at DESC',
+        'SELECT g.id, g.name, g.description, g.type, g.avatar_url, g.created_at, gm.role, gm.joined_at, (SELECT COUNT(*) FROM `group_members` WHERE group_id = g.id) as member_count, (SELECT COUNT(*) FROM `messages` WHERE group_id = g.id AND is_deleted = FALSE) as message_count FROM `groups` g JOIN `group_members` gm ON g.id = gm.group_id WHERE gm.user_id = ? AND g.is_active = TRUE ORDER BY g.created_at DESC',
         [req.userId]
       );
     } else if (type === 'public') {
       // Get public groups user is not in
       groups = await db.getMany(
-        'SELECT g.id, g.name, g.description, g.avatar_url, g.created_at, u.username as creator_username, u.full_name as creator_name, (SELECT COUNT(*) FROM group_members WHERE group_id = g.id) as member_count FROM groups g JOIN users u ON g.creator_id = u.id WHERE g.type = "public" AND g.is_active = TRUE AND g.id NOT IN (SELECT group_id FROM group_members WHERE user_id = ?) ORDER BY g.created_at DESC LIMIT 50',
+        'SELECT g.id, g.name, g.description, g.avatar_url, g.created_at, u.username as creator_username, u.full_name as creator_name, (SELECT COUNT(*) FROM `group_members` WHERE group_id = g.id) as member_count FROM `groups` g JOIN `users` u ON g.creator_id = u.id WHERE g.type = "public" AND g.is_active = TRUE AND g.id NOT IN (SELECT group_id FROM `group_members` WHERE user_id = ?) ORDER BY g.created_at DESC LIMIT 50',
         [req.userId]
       );
     } else {
       // Get all groups
       groups = await db.getMany(
-        'SELECT g.id, g.name, g.description, g.type, g.avatar_url, g.created_at, u.username as creator_username, (SELECT COUNT(*) FROM group_members WHERE group_id = g.id) as member_count, EXISTS(SELECT 1 FROM group_members WHERE group_id = g.id AND user_id = ?) as is_member FROM groups g JOIN users u ON g.creator_id = u.id WHERE g.is_active = TRUE ORDER BY g.created_at DESC LIMIT 50',
+        'SELECT g.id, g.name, g.description, g.type, g.avatar_url, g.created_at, u.username as creator_username, (SELECT COUNT(*) FROM `group_members` WHERE group_id = g.id) as member_count, EXISTS(SELECT 1 FROM `group_members` WHERE group_id = g.id AND user_id = ?) as is_member FROM `groups` g JOIN `users` u ON g.creator_id = u.id WHERE g.is_active = TRUE ORDER BY g.created_at DESC LIMIT 50',
         [req.userId]
       );
     }
@@ -80,7 +80,7 @@ router.post('/', createGroupValidation, async (req, res) => {
 
     // Get created group
     const group = await db.getOne(
-      'SELECT g.*, gm.role, (SELECT COUNT(*) FROM group_members WHERE group_id = g.id) as member_count FROM groups g JOIN group_members gm ON g.id = gm.group_id WHERE g.id = ? AND gm.user_id = ?',
+      'SELECT g.*, gm.role, (SELECT COUNT(*) FROM `group_members` WHERE group_id = g.id) as member_count FROM `groups` g JOIN `group_members` gm ON g.id = gm.group_id WHERE g.id = ? AND gm.user_id = ?',
       [groupId, req.userId]
     );
 
@@ -108,7 +108,7 @@ router.get('/:groupId', async (req, res) => {
     const { groupId } = req.params;
 
     const group = await db.getOne(
-      'SELECT g.*, u.username as creator_username, u.full_name as creator_name, (SELECT COUNT(*) FROM group_members WHERE group_id = g.id) as member_count, (SELECT COUNT(*) FROM messages WHERE group_id = g.id AND is_deleted = FALSE) as message_count, EXISTS(SELECT 1 FROM group_members WHERE group_id = g.id AND user_id = ?) as is_member, (SELECT role FROM group_members WHERE group_id = g.id AND user_id = ?) as user_role FROM groups g JOIN users u ON g.creator_id = u.id WHERE g.id = ? AND g.is_active = TRUE',
+      'SELECT g.*, u.username as creator_username, u.full_name as creator_name, (SELECT COUNT(*) FROM `group_members` WHERE group_id = g.id) as member_count, (SELECT COUNT(*) FROM `messages` WHERE group_id = g.id AND is_deleted = FALSE) as message_count, EXISTS(SELECT 1 FROM `group_members` WHERE group_id = g.id AND user_id = ?) as is_member, (SELECT role FROM `group_members` WHERE group_id = g.id AND user_id = ?) as user_role FROM `groups` g JOIN `users` u ON g.creator_id = u.id WHERE g.id = ? AND g.is_active = TRUE',
       [req.userId, req.userId, groupId]
     );
 
@@ -121,7 +121,7 @@ router.get('/:groupId', async (req, res) => {
 
     // Get members
     const members = await db.getMany(
-      'SELECT u.id, u.username, u.full_name, u.avatar_url, gm.role, gm.joined_at, gm.is_muted FROM group_members gm JOIN users u ON gm.user_id = u.id WHERE gm.group_id = ? AND u.is_active = TRUE ORDER BY gm.role, gm.joined_at',
+      'SELECT u.id, u.username, u.full_name, u.avatar_url, gm.role, gm.joined_at, gm.is_muted FROM `group_members` gm JOIN `users` u ON gm.user_id = u.id WHERE gm.group_id = ? AND u.is_active = TRUE ORDER BY gm.role, gm.joined_at',
       [groupId]
     );
 

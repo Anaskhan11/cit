@@ -27,13 +27,13 @@ router.get('/', async (req, res) => {
 
     // Get recent messages
     const recentMessages = await db.getMany(
-      'SELECT m.id, m.content, m.message_type, m.created_at, g.id as group_id, g.name as group_name FROM messages m JOIN groups g ON m.group_id = g.id WHERE m.sender_id = ? AND m.is_deleted = FALSE ORDER BY m.created_at DESC LIMIT 5',
+      'SELECT m.id, m.content, m.message_type, m.created_at, g.id as group_id, g.name as group_name FROM `messages` m JOIN `groups` g ON m.group_id = g.id WHERE m.sender_id = ? AND m.is_deleted = FALSE ORDER BY m.created_at DESC LIMIT 5',
       [req.userId]
     );
 
     // Get recent groups activity
     const recentGroups = await db.getMany(
-      'SELECT g.id, g.name, g.avatar_url, (SELECT COUNT(*) FROM messages WHERE group_id = g.id AND is_deleted = FALSE) as message_count, (SELECT MAX(created_at) FROM messages WHERE group_id = g.id AND is_deleted = FALSE) as last_activity FROM groups g JOIN group_members gm ON g.id = gm.group_id WHERE gm.user_id = ? AND g.is_active = TRUE ORDER BY last_activity DESC LIMIT 5',
+      'SELECT g.id, g.name, g.avatar_url, (SELECT COUNT(*) FROM `messages` WHERE group_id = g.id AND is_deleted = FALSE) as message_count, (SELECT MAX(created_at) FROM `messages` WHERE group_id = g.id AND is_deleted = FALSE) as last_activity FROM `groups` g JOIN `group_members` gm ON g.id = gm.group_id WHERE gm.user_id = ? AND g.is_active = TRUE ORDER BY last_activity DESC LIMIT 5',
       [req.userId]
     );
 
