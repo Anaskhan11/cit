@@ -34,7 +34,7 @@ router.get('/', async (req, res) => {
          FROM groups g
          JOIN group_members gm ON g.id = gm.group_id
          WHERE gm.user_id = ? AND g.is_active = TRUE
-         ORDER BY g.created_at DESC`,
+         ORDER BY g.created_at DESC`.replace(/\n\s+/g, ' '),
         [req.userId]
       );
     } else if (type === 'public') {
@@ -51,7 +51,7 @@ router.get('/', async (req, res) => {
            SELECT group_id FROM group_members WHERE user_id = ?
          )
          ORDER BY g.created_at DESC
-         LIMIT 50`,
+         LIMIT 50`.replace(/\n\s+/g, ' '),
         [req.userId]
       );
     } else {
@@ -67,7 +67,7 @@ router.get('/', async (req, res) => {
          JOIN users u ON g.creator_id = u.id
          WHERE g.is_active = TRUE
          ORDER BY g.created_at DESC
-         LIMIT 50`,
+         LIMIT 50`.replace(/\n\s+/g, ' '),
         [req.userId]
       );
     }
@@ -112,7 +112,7 @@ router.post('/', createGroupValidation, async (req, res) => {
               (SELECT COUNT(*) FROM group_members WHERE group_id = g.id) as member_count
        FROM groups g
        JOIN group_members gm ON g.id = gm.group_id
-       WHERE g.id = ? AND gm.user_id = ?`,
+       WHERE g.id = ? AND gm.user_id = ?`.replace(/\n\s+/g, ' '),
       [groupId, req.userId]
     );
 
@@ -150,7 +150,7 @@ router.get('/:groupId', async (req, res) => {
               (SELECT role FROM group_members WHERE group_id = g.id AND user_id = ?) as user_role
        FROM groups g
        JOIN users u ON g.creator_id = u.id
-       WHERE g.id = ? AND g.is_active = TRUE`,
+       WHERE g.id = ? AND g.is_active = TRUE`.replace(/\n\s+/g, ' '),
       [req.userId, req.userId, groupId]
     );
 
@@ -168,7 +168,7 @@ router.get('/:groupId', async (req, res) => {
        FROM group_members gm
        JOIN users u ON gm.user_id = u.id
        WHERE gm.group_id = ? AND u.is_active = TRUE
-       ORDER BY gm.role, gm.joined_at`,
+       ORDER BY gm.role, gm.joined_at`.replace(/\n\s+/g, ' '),
       [groupId]
     );
 
