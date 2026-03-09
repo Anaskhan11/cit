@@ -327,6 +327,7 @@ module.exports = (io) => {
     // WebRTC offer
     socket.on("webrtc_offer", (data) => {
       const { callId, targetUserId, offer } = data;
+      console.log("Forwarding offer to user:", targetUserId);
       io.to(`user_${targetUserId}`).emit("webrtc_offer", {
         callId,
         fromUserId: socket.userId,
@@ -338,6 +339,7 @@ module.exports = (io) => {
     // WebRTC answer
     socket.on("webrtc_answer", (data) => {
       const { callId, targetUserId, answer } = data;
+      console.log("Forwarding answer to user:", targetUserId);
       io.to(`user_${targetUserId}`).emit("webrtc_answer", {
         callId,
         fromUserId: socket.userId,
@@ -348,6 +350,7 @@ module.exports = (io) => {
     // WebRTC ICE candidate
     socket.on("webrtc_ice_candidate", (data) => {
       const { callId, targetUserId, candidate } = data;
+      console.log("Forwarding ICE candidate to user:", targetUserId);
       io.to(`user_${targetUserId}`).emit("webrtc_ice_candidate", {
         callId,
         fromUserId: socket.userId,
