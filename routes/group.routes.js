@@ -68,7 +68,7 @@ router.post('/', createGroupValidation, async (req, res) => {
 
     // Create group
     const groupId = await db.insert(
-      'INSERT INTO groups (name, description, creator_id, type, max_members) VALUES (?, ?, ?, ?, ?)',
+      'INSERT INTO `groups` (name, description, creator_id, type, max_members) VALUES (?, ?, ?, ?, ?)',
       [name, description || null, req.userId, type || 'public', maxMembers || 100]
     );
 
@@ -149,7 +149,7 @@ router.post('/:groupId/join', joinGroupValidation, async (req, res) => {
 
     // Check if group exists and is active
     const group = await db.getOne(
-      'SELECT id, type, max_members FROM groups WHERE id = ? AND is_active = TRUE',
+      'SELECT id, type, max_members FROM `groups` WHERE id = ? AND is_active = TRUE',
       [groupId]
     );
 
@@ -264,7 +264,7 @@ router.post('/:groupId/leave', async (req, res) => {
         } else {
           // No other members, delete the group
           await db.update(
-            'UPDATE groups SET is_active = FALSE WHERE id = ?',
+            'UPDATE `groups` SET is_active = FALSE WHERE id = ?',
             [groupId]
           );
         }
@@ -393,7 +393,7 @@ router.delete('/:groupId', async (req, res) => {
 
     // Soft delete group
     await db.update(
-      'UPDATE groups SET is_active = FALSE WHERE id = ?',
+      'UPDATE `groups` SET is_active = FALSE WHERE id = ?',
       [groupId]
     );
 
