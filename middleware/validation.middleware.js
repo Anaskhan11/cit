@@ -98,9 +98,13 @@ const sendMessageValidation = [
 // Call validations
 const initiateCallValidation = [
   body('groupId')
+    .notEmpty()
+    .withMessage('Group ID is required')
     .isInt({ min: 1 })
     .withMessage('Invalid group ID'),
   body('callType')
+    .notEmpty()
+    .withMessage('Call type is required')
     .isIn(['audio', 'video'])
     .withMessage('Call type must be either audio or video'),
   handleValidationErrors
