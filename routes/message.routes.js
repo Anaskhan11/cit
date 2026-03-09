@@ -24,7 +24,9 @@ router.use(authMiddleware);
 router.get("/group/:groupId", async (req, res) => {
   try {
     const { groupId } = req.params;
-    const { page = 1, limit = 50, before } = req.query;
+    const page = parseInt(req.query.page) || 1;
+    const limit = parseInt(req.query.limit) || 50;
+    const { before } = req.query;
 
     // Check if user is member
     const membership = await db.getOne(
@@ -51,7 +53,7 @@ router.get("/group/:groupId", async (req, res) => {
     }
 
     sql += " ORDER BY m.created_at DESC LIMIT ? OFFSET ?";
-    params.push(parseInt(limit), parseInt(offset));
+    params.push(limit, offset);
 
     const messages = await db.getMany(sql, params);
 
@@ -68,9 +70,9 @@ router.get("/group/:groupId", async (req, res) => {
       data: {
         messages: messages.reverse(),
         pagination: {
-          page: parseInt(page),
-          limit: parseInt(limit),
-          hasMore: messages.length === parseInt(limit),
+          page,
+          limit,
+          hasMore: messages.length === limit,
         },
       },
     });
