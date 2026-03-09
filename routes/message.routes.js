@@ -43,15 +43,14 @@ router.get("/group/:groupId", async (req, res) => {
 
     const offset = (page - 1) * limit;
     const params = [groupId];
-    let sql = `SELECT m.id, m.group_id, m.sender_id, m.content, m.message_type, m.file_url, m.file_name, m.reply_to_id, m.is_edited, m.created_at, u.username, u.full_name, u.avatar_url, ma.clarity_score, ma.tone, ma.emotion_detected, ma.suggestions, ma.improved_version, ma.potential_misunderstanding FROM \`messages\` m JOIN \`users\` u ON m.sender_id = u.id LEFT JOIN \`message_analysis\` ma ON m.id = ma.message_id WHERE m.group_id = ? AND m.is_deleted = FALSE`;
+    let sql = `SELECT m.id, m.group_id, m.sender_id, m.content, m.message_type, m.file_url, m.file_name, m.reply_to_id, m.is_edited, m.created_at, u.username, u.full_name, u.avatar_url, ma.clarity_score, ma.tone, ma.emotion_detected, ma.suggestions, ma.improved_version, ma.potential_misunderstanding FROM messages m JOIN users u ON m.sender_id = u.id LEFT JOIN message_analysis ma ON m.id = ma.message_id WHERE m.group_id = ? AND m.is_deleted = FALSE`;
 
     if (before) {
       sql += " AND m.created_at < ?";
       params.push(before);
     }
 
-    sql += " ORDER BY m.created_at DESC LIMIT ? OFFSET ?";
-    params.push(limit, offset);
+    sql += " ORDER BY m.created_at DESC LIMIT " + limit + " OFFSET " + offset;
 
     const messages = await db.getMany(sql, params);
 
@@ -130,7 +129,7 @@ router.post("/group/:groupId", sendMessageValidation, async (req, res) => {
 
     // Get created message
     const message = await db.getOne(
-      `SELECT m.id, m.group_id, m.sender_id, m.content, m.message_type, m.file_url, m.file_name, m.reply_to_id, m.created_at, u.username, u.full_name, u.avatar_url FROM \`messages\` m JOIN \`users\` u ON m.sender_id = u.id WHERE m.id = ?`,
+      `SELECT m.id, m.group_id, m.sender_id, m.content, m.message_type, m.file_url, m.file_name, m.reply_to_id, m.created_at, u.username, u.full_name, u.avatar_url FROM messages m JOIN users u ON m.sender_id = u.id WHERE m.id = ?`,
       [messageId],
     );
 
@@ -213,7 +212,7 @@ router.put("/:messageId", async (req, res) => {
 
     // Get updated message
     const updatedMessage = await db.getOne(
-      `SELECT m.id, m.group_id, m.sender_id, m.content, m.message_type, m.is_edited, m.edited_at, m.created_at, u.username, u.full_name, u.avatar_url, ma.clarity_score, ma.tone, ma.suggestions FROM \`messages\` m JOIN \`users\` u ON m.sender_id = u.id LEFT JOIN \`message_analysis\` ma ON m.id = ma.message_id WHERE m.id = ?`,
+      `SELECT m.id, m.group_id, m.sender_id, m.content, m.message_type, m.is_edited, m.edited_at, m.created_at, u.username, u.full_name, u.avatar_url, ma.clarity_score, ma.tone, ma.suggestions FROM messages m JOIN users u ON m.sender_id = u.id LEFT JOIN message_analysis ma ON m.id = ma.message_id WHERE m.id = ?`,
       [messageId],
     );
 
@@ -249,7 +248,7 @@ router.delete("/:messageId", async (req, res) => {
 
     // Check if message exists
     const message = await db.getOne(
-      `SELECT m.sender_id, m.group_id, gm.role FROM \`messages\` m JOIN group_members gm ON m.group_id = gm.group_id AND gm.user_id = ? WHERE m.id = ? AND m.is_deleted = FALSE`,
+      `SELECT m.sender_id, m.group_id, gm.role FROM messages m JOIN group_members gm ON m.group_id = gm.group_id AND gm.user_id = ? WHERE m.id = ? AND m.is_deleted = FALSE`,
       [req.userId, messageId],
     );
 
@@ -310,7 +309,7 @@ router.get("/search", async (req, res) => {
       });
     }
 
-    let sql = `SELECT m.id, m.group_id, m.content, m.message_type, m.created_at, u.username, u.full_name, u.avatar_url, g.name as group_name FROM \`messages\` m JOIN \`users\` u ON m.sender_id = u.id JOIN group_members gm ON m.group_id = gm.group_id JOIN \`groups\` g ON m.group_id = g.id WHERE gm.user_id = ? AND m.is_deleted = FALSE AND m.message_type = 'text' AND m.content LIKE ?`;
+    let sql = `SELECT m.id, m.group_id, m.content, m.message_type, m.created_at, u.username, u.full_name, u.avatar_url, g.name as group_name FROM messages m JOIN users u ON m.sender_id = u.id JOIN group_members gm ON m.group_id = gm.group_id JOIN groups g ON m.group_id = g.id WHERE gm.user_id = ? AND m.is_deleted = FALSE AND m.message_type = 'text' AND m.content LIKE ?`;
 
     const params = [req.userId, `%${query}%`];
 
