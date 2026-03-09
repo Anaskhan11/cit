@@ -63,7 +63,7 @@ router.post('/initiate', initiateCallValidation, async (req, res) => {
 
     // Get call details
     const call = await db.getOne(
-      'SELECT c.*, g.name as group_name, u.full_name as initiator_name FROM calls c JOIN groups g ON c.group_id = g.id JOIN users u ON c.initiator_id = u.id WHERE c.id = ?',
+      'SELECT c.*, g.name as group_name, u.full_name as initiator_name FROM calls c JOIN `groups` g ON c.group_id = g.id JOIN users u ON c.initiator_id = u.id WHERE c.id = ?',
       [callId]
     );
 
@@ -333,7 +333,7 @@ router.get('/:callId', async (req, res) => {
     const { callId } = req.params;
 
     const call = await db.getOne(
-      'SELECT c.*, g.name as group_name FROM calls c JOIN groups g ON c.group_id = g.id WHERE c.id = ?',
+      'SELECT c.*, g.name as group_name FROM calls c JOIN `groups` g ON c.group_id = g.id WHERE c.id = ?',
       [callId]
     );
 
