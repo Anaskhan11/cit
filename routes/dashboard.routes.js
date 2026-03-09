@@ -105,7 +105,7 @@ router.get('/analytics', async (req, res) => {
 
     // Group participation
     const groupParticipation = await db.getMany(
-      'SELECT g.name, COUNT(m.id) as message_count, AVG(ma.clarity_score) as avg_clarity FROM groups g JOIN group_members gm ON g.id = gm.group_id LEFT JOIN messages m ON g.id = m.group_id AND m.sender_id = ? AND m.is_deleted = FALSE LEFT JOIN message_analysis ma ON m.id = ma.message_id WHERE gm.user_id = ? AND g.is_active = TRUE GROUP BY g.id ORDER BY message_count DESC LIMIT 10',
+      'SELECT g.name, COUNT(m.id) as message_count, AVG(ma.clarity_score) as avg_clarity FROM `groups` g JOIN `group_members` gm ON g.id = gm.group_id LEFT JOIN `messages` m ON g.id = m.group_id AND m.sender_id = ? AND m.is_deleted = FALSE LEFT JOIN `message_analysis` ma ON m.id = ma.message_id WHERE gm.user_id = ? AND g.is_active = TRUE GROUP BY g.id ORDER BY message_count DESC LIMIT 10',
       [req.userId, req.userId]
     );
 
