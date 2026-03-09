@@ -14,6 +14,81 @@ const router = express.Router();
 router.use(authMiddleware);
 
 /**
+ * @route   POST /api/calls/group/:groupId/force-end
+ * @desc    Force end any ongoing calls in a group (admin/group creator only)
+ * @access  Private
+ */
+router.post('/group/:groupId/force-end', async (req, res) => {
+  try {
+    const { groupId } = req.params;
+
+    // Check if user is admin or group creator
+    const group = await db.getOne(
+      'SELECT creator_id FROM `groups` WHERE id = ?',
+      [groupId]
+    );
+
+    if (!group) {
+      return res.status(404).json({
+        success: false,
+        message: 'Group not found'
+      });
+    }
+
+    if (group.creator_id !== req.userId) {
+      return res.status(403).json({
+        success: false,
+        message: 'Only group creator can force end calls'
+      });
+    }
+
+    // Find and end all ongoing calls in this group
+    const ongoingCalls = await db.getMany(
+      'SELECT id FROM calls WHERE group_id = ? AND status = "ongoing"',
+      [groupId]
+    );
+
+    if (ongoingCalls.length === 0) {
+      return res.json({
+        success: true,
+        message: 'No ongoing calls to end'
+      });
+    }
+
+    for (const call of ongoingCalls) {
+      // End the call
+      await db.update(
+        'UPDATE calls SET status = "ended", ended_at = NOW() WHERE id = ?',
+        [call.id]
+      );
+
+      // Update all participants
+      await db.update(
+        'UPDATE call_participants SET left_at = NOW(), duration_seconds = TIMESTAMPDIFF(SECOND, joined_at, NOW()) WHERE call_id = ? AND left_at IS NULL',
+        [call.id]
+      );
+
+      // Calculate total duration
+      await db.update(
+        'UPDATE calls SET duration_seconds = TIMESTAMPDIFF(SECOND, started_at, ended_at) WHERE id = ?',
+        [call.id]
+      );
+    }
+
+    res.json({
+      success: true,
+      message: `Force ended ${ongoingCalls.length} call(s)`
+    });
+  } catch (error) {
+    console.error('Force end call error:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Error force ending calls'
+    });
+  }
+});
+
+/**
  * @route   POST /api/calls/initiate
  * @desc    Initiate a new call
  * @access  Private
