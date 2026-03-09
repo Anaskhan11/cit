@@ -63,11 +63,7 @@ router.post('/initiate', initiateCallValidation, async (req, res) => {
 
     // Get call details
     const call = await db.getOne(
-      `SELECT c.*, g.name as group_name, u.full_name as initiator_name
-       FROM calls c
-       JOIN groups g ON c.group_id = g.id
-       JOIN users u ON c.initiator_id = u.id
-       WHERE c.id = ?`,
+      'SELECT c.*, g.name as group_name, u.full_name as initiator_name FROM calls c JOIN groups g ON c.group_id = g.id JOIN users u ON c.initiator_id = u.id WHERE c.id = ?',
       [callId]
     );
 
@@ -162,10 +158,7 @@ router.post('/:callId/join', async (req, res) => {
 
     // Get all participants
     const participants = await db.getMany(
-      `SELECT u.id, u.username, u.full_name, u.avatar_url, cp.joined_at
-       FROM call_participants cp
-       JOIN users u ON cp.user_id = u.id
-       WHERE cp.call_id = ?`,
+      'SELECT u.id, u.username, u.full_name, u.avatar_url, cp.joined_at FROM call_participants cp JOIN users u ON cp.user_id = u.id WHERE cp.call_id = ?',
       [callId]
     );
 
@@ -220,9 +213,7 @@ router.post('/:callId/leave', async (req, res) => {
 
     // Calculate duration
     await db.update(
-      `UPDATE call_participants 
-       SET duration_seconds = TIMESTAMPDIFF(SECOND, joined_at, left_at)
-       WHERE call_id = ? AND user_id = ?`,
+      'UPDATE call_participants SET duration_seconds = TIMESTAMPDIFF(SECOND, joined_at, left_at) WHERE call_id = ? AND user_id = ?',
       [callId, req.userId]
     );
 
@@ -303,18 +294,13 @@ router.post('/:callId/end', async (req, res) => {
 
     // Update all participants duration
     await db.update(
-      `UPDATE call_participants 
-       SET left_at = NOW(),
-           duration_seconds = TIMESTAMPDIFF(SECOND, joined_at, NOW())
-       WHERE call_id = ? AND left_at IS NULL`,
+      'UPDATE call_participants SET left_at = NOW(), duration_seconds = TIMESTAMPDIFF(SECOND, joined_at, NOW()) WHERE call_id = ? AND left_at IS NULL',
       [callId]
     );
 
     // Calculate total duration
     await db.update(
-      `UPDATE calls 
-       SET duration_seconds = TIMESTAMPDIFF(SECOND, started_at, ended_at)
-       WHERE id = ?`,
+      'UPDATE calls SET duration_seconds = TIMESTAMPDIFF(SECOND, started_at, ended_at) WHERE id = ?',
       [callId]
     );
 
@@ -347,10 +333,7 @@ router.get('/:callId', async (req, res) => {
     const { callId } = req.params;
 
     const call = await db.getOne(
-      `SELECT c.*, g.name as group_name
-       FROM calls c
-       JOIN groups g ON c.group_id = g.id
-       WHERE c.id = ?`,
+      'SELECT c.*, g.name as group_name FROM calls c JOIN groups g ON c.group_id = g.id WHERE c.id = ?',
       [callId]
     );
 
@@ -363,12 +346,7 @@ router.get('/:callId', async (req, res) => {
 
     // Get participants
     const participants = await db.getMany(
-      `SELECT u.id, u.username, u.full_name, u.avatar_url,
-              cp.joined_at, cp.left_at, cp.duration_seconds
-       FROM call_participants cp
-       JOIN users u ON cp.user_id = u.id
-       WHERE cp.call_id = ?
-       ORDER BY cp.joined_at`,
+      'SELECT u.id, u.username, u.full_name, u.avatar_url, cp.joined_at, cp.left_at, cp.duration_seconds FROM call_participants cp JOIN users u ON cp.user_id = u.id WHERE cp.call_id = ? ORDER BY cp.joined_at',
       [callId]
     );
 
@@ -393,7 +371,9 @@ router.get('/:callId', async (req, res) => {
 router.get('/group/:groupId/history', async (req, res) => {
   try {
     const { groupId } = req.params;
-    const { page = 1, limit = 20 } = req.query;
+    const page = Math.max(1, parseInt(req.query.page, 10) || 1);
+    const limit = Math.max(1, Math.min(100, parseInt(req.query.limit, 10) || 20));
+    const offset = (page - 1) * limit;
 
     // Check if user is member
     const membership = await db.getOne(
@@ -408,16 +388,9 @@ router.get('/group/:groupId/history', async (req, res) => {
       });
     }
 
-    const offset = (page - 1) * limit;
-
     const calls = await db.getMany(
-      `SELECT c.*, u.full_name as initiator_name
-       FROM calls c
-       JOIN users u ON c.initiator_id = u.id
-       WHERE c.group_id = ?
-       ORDER BY c.started_at DESC
-       LIMIT ? OFFSET ?`,
-      [groupId, parseInt(limit), parseInt(offset)]
+      'SELECT c.*, u.full_name as initiator_name FROM calls c JOIN users u ON c.initiator_id = u.id WHERE c.group_id = ? ORDER BY c.started_at DESC LIMIT ' + limit + ' OFFSET ' + offset,
+      [groupId]
     );
 
     res.json({
@@ -425,9 +398,9 @@ router.get('/group/:groupId/history', async (req, res) => {
       data: { 
         calls,
         pagination: {
-          page: parseInt(page),
-          limit: parseInt(limit),
-          hasMore: calls.length === parseInt(limit)
+          page,
+          limit,
+          hasMore: calls.length === limit
         }
       }
     });
