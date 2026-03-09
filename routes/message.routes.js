@@ -24,8 +24,8 @@ router.use(authMiddleware);
 router.get("/group/:groupId", async (req, res) => {
   try {
     const { groupId } = req.params;
-    const page = parseInt(req.query.page) || 1;
-    const limit = parseInt(req.query.limit) || 50;
+    const page = Math.max(1, parseInt(req.query.page, 10) || 1);
+    const limit = Math.max(1, Math.min(100, parseInt(req.query.limit, 10) || 50));
     const { before } = req.query;
 
     // Check if user is member
@@ -42,10 +42,8 @@ router.get("/group/:groupId", async (req, res) => {
     }
 
     const offset = (page - 1) * limit;
-    const params = [];
+    const params = [groupId];
     let sql = `SELECT m.id, m.group_id, m.sender_id, m.content, m.message_type, m.file_url, m.file_name, m.reply_to_id, m.is_edited, m.created_at, u.username, u.full_name, u.avatar_url, ma.clarity_score, ma.tone, ma.emotion_detected, ma.suggestions, ma.improved_version, ma.potential_misunderstanding FROM \`messages\` m JOIN \`users\` u ON m.sender_id = u.id LEFT JOIN \`message_analysis\` ma ON m.id = ma.message_id WHERE m.group_id = ? AND m.is_deleted = FALSE`;
-
-    params.push(groupId);
 
     if (before) {
       sql += " AND m.created_at < ?";
