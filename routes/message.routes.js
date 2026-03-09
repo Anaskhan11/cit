@@ -40,20 +40,20 @@ router.get("/group/:groupId", async (req, res) => {
     }
 
     const offset = (page - 1) * limit;
-    const params = [groupId];
-    let whereClause = "m.group_id = ? AND m.is_deleted = FALSE";
+    const params = [];
+    let sql = `SELECT m.id, m.group_id, m.sender_id, m.content, m.message_type, m.file_url, m.file_name, m.reply_to_id, m.is_edited, m.created_at, u.username, u.full_name, u.avatar_url, ma.clarity_score, ma.tone, ma.emotion_detected, ma.suggestions, ma.improved_version, ma.potential_misunderstanding FROM \`messages\` m JOIN \`users\` u ON m.sender_id = u.id LEFT JOIN \`message_analysis\` ma ON m.id = ma.message_id WHERE m.group_id = ? AND m.is_deleted = FALSE`;
+
+    params.push(groupId);
 
     if (before) {
-      whereClause += " AND m.created_at < ?";
+      sql += " AND m.created_at < ?";
       params.push(before);
     }
 
+    sql += " ORDER BY m.created_at DESC LIMIT ? OFFSET ?";
     params.push(parseInt(limit), parseInt(offset));
 
-    const messages = await db.getMany(
-      `SELECT m.id, m.group_id, m.sender_id, m.content, m.message_type, m.file_url, m.file_name, m.reply_to_id, m.is_edited, m.created_at, u.username, u.full_name, u.avatar_url, ma.clarity_score, ma.tone, ma.emotion_detected, ma.suggestions, ma.improved_version, ma.potential_misunderstanding FROM \`messages\` m JOIN \`users\` u ON m.sender_id = u.id LEFT JOIN \`message_analysis\` ma ON m.id = ma.message_id WHERE ${whereClause} ORDER BY m.created_at DESC LIMIT ? OFFSET ?`,
-      params,
-    );
+    const messages = await db.getMany(sql, params);
 
     // Update last read message
     if (messages.length > 0) {
