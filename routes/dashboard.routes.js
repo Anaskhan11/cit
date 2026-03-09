@@ -21,16 +21,7 @@ router.get('/', async (req, res) => {
   try {
     // Get user stats
     const userStats = await db.getOne(
-      `SELECT 
-        u.communication_score,
-        u.clarity_score,
-        u.tone_score,
-        u.response_time_score,
-        u.total_messages_sent,
-        COUNT(DISTINCT gm.group_id) as group_count
-       FROM users u
-       LEFT JOIN group_members gm ON u.id = gm.user_id
-       WHERE u.id = ?`,
+      'SELECT u.communication_score, u.clarity_score, u.tone_score, u.response_time_score, u.total_messages_sent, COUNT(DISTINCT gm.group_id) as group_count FROM users u LEFT JOIN group_members gm ON u.id = gm.user_id WHERE u.id = ? GROUP BY u.id',
       [req.userId]
     );
 
