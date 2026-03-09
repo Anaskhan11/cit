@@ -28,6 +28,7 @@ const generateToken = (userId) => {
 router.post('/register', registerValidation, async (req, res) => {
   try {
     const { username, email, password, fullName } = req.body;
+    console.log('Register attempt for email:', email, 'username:', username);
 
     // Check if user already exists
     const existingUser = await db.getOne(
@@ -36,6 +37,7 @@ router.post('/register', registerValidation, async (req, res) => {
     );
 
     if (existingUser) {
+      console.log('Registration failed: User already exists');
       return res.status(400).json({
         success: false,
         message: 'User with this email or username already exists'
@@ -45,18 +47,21 @@ router.post('/register', registerValidation, async (req, res) => {
     // Hash password
     const salt = await bcrypt.genSalt(10);
     const hashedPassword = await bcrypt.hash(password, salt);
+    console.log('Password hashed successfully');
 
     // Create user
     const userId = await db.insert(
       'INSERT INTO users (username, email, password, full_name) VALUES (?, ?, ?, ?)',
       [username, email, hashedPassword, fullName]
     );
+    console.log('User created with ID:', userId);
 
     // Create default user settings
     await db.insert(
       'INSERT INTO user_settings (user_id) VALUES (?)',
       [userId]
     );
+    console.log('User settings created');
 
     // Generate token
     const token = generateToken(userId);
@@ -91,6 +96,7 @@ router.post('/register', registerValidation, async (req, res) => {
 router.post('/login', loginValidation, async (req, res) => {
   try {
     const { email, password } = req.body;
+    console.log('Login attempt for email:', email);
 
     // Find user by email
     const user = await db.getOne(
@@ -98,7 +104,13 @@ router.post('/login', loginValidation, async (req, res) => {
       [email]
     );
 
+    console.log('User found:', user ? 'Yes' : 'No');
+    if (user) {
+      console.log('User ID:', user.id, 'Is Active:', user.is_active, 'Has Password Hash:', !!user.password);
+    }
+
     if (!user) {
+      console.log('Login failed: User not found');
       return res.status(401).json({
         success: false,
         message: 'Invalid email or password'
@@ -106,6 +118,7 @@ router.post('/login', loginValidation, async (req, res) => {
     }
 
     if (!user.is_active) {
+      console.log('Login failed: Account is deactivated for user:', user.id);
       return res.status(401).json({
         success: false,
         message: 'Account is deactivated. Please contact support.'
@@ -113,14 +126,19 @@ router.post('/login', loginValidation, async (req, res) => {
     }
 
     // Check password
+    console.log('Comparing password...');
     const isMatch = await bcrypt.compare(password, user.password);
+    console.log('Password match result:', isMatch);
 
     if (!isMatch) {
+      console.log('Login failed: Password mismatch for user:', user.id);
       return res.status(401).json({
         success: false,
         message: 'Invalid email or password'
       });
     }
+
+    console.log('Login successful for user:', user.id);
 
     // Update last seen
     await db.update(
